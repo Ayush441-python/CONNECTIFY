@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+  ::selection {
+    @apply bg-brand-pink/20 text-brand-purple-dark;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply relative rounded-xl2 border border-white/60 bg-white/70 backdrop-blur-xl shadow-glass;
+  }
+  .glass-card-dark {
+    @apply relative rounded-xl2 border border-white/10 bg-ink/40 backdrop-blur-xl;
+  }
+  .brand-text-gradient {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink/10 bg-white px-6 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-brand-purple/40 hover:text-brand-purple disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink;
+  }
+  .input-field {
+    @apply w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/35 outline-none transition-all focus:border-brand-purple/50 focus:ring-4 focus:ring-brand-purple/10;
+  }
+  .label-field {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink/50;
+  }
+  .pill {
+    @apply inline-flex items-center rounded-full border border-ink/10 bg-mist px-3 py-1 text-xs font-medium text-ink/70;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-ink/15;
+  }
+}

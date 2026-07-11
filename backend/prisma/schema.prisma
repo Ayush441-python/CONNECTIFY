@@ -1,0 +1,405 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------------
+
+enum Role {
+  BRAND
+  INFLUENCER
+  ADMIN
+}
+
+enum InfluencerTier {
+  NANO // 1K - 10K
+  MICRO // 10K - 100K
+  MACRO // 100K - 1M
+  MEGA // 1M+
+}
+
+enum Availability {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  COMPLETED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum CollaborationStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum NotificationType {
+  APPLICATION_RECEIVED
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+  REQUEST_RECEIVED
+  REQUEST_ACCEPTED
+  REQUEST_REJECTED
+  NEW_MESSAGE
+  NEW_CAMPAIGN
+  SYSTEM
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+// ------------------------------------------------------------------
+// Core identity
+// ------------------------------------------------------------------
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  mobile            String?   @unique
+  password          String
+  role              Role
+  isEmailVerified   Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  isSuspended       Boolean   @default(false)
+  emailVerifyToken  String?
+  emailVerifyExpiry DateTime?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  influencerProfile InfluencerProfile?
+  brandProfile      BrandProfile?
+  refreshTokens     RefreshToken[]
+  notifications     Notification[]
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  reportsMade       Report[]           @relation("ReporterUser")
+  reportsAgainst    Report[]           @relation("ReportedUser")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------------------------
+// Profiles
+// ------------------------------------------------------------------
+
+model InfluencerProfile {
+  id                String         @id @default(uuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  username          String         @unique
+  instagramUsername String?
+  city              String?
+  state             String?
+  country           String?
+  categories        String[]       @default([])
+  languages         String[]       @default([])
+  tier              InfluencerTier @default(NANO)
+  availability      Availability   @default(AVAILABLE)
+  bio               String?
+  profilePhotoUrl   String?
+  featuredCoverUrl  String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  portfolioImages       PortfolioImage[]
+  applications          CampaignApplication[]
+  collaborationRequests CollaborationRequest[]
+  collaborations        Collaboration[]
+  savedByBrands         SavedCreator[]
+  savedCampaigns        SavedCampaign[]
+
+  @@index([city, state, country])
+  @@index([tier, availability])
+  @@map("influencer_profiles")
+}
+
+model BrandProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandName           String
+  logoUrl             String?
+  industry            String?
+  about               String?
+  website             String?
+  city                String?
+  state               String?
+  country              String?
+  preferredCategories String[] @default([])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  campaigns              Campaign[]
+  collaborationRequests  CollaborationRequest[]
+  collaborations         Collaboration[]
+  savedCreators          SavedCreator[]
+
+  @@map("brand_profiles")
+}
+
+model PortfolioImage {
+  id           String            @id @default(uuid())
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  imageUrl     String
+  caption      String?
+  category     String?
+  featured     Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+
+  @@index([influencerId])
+  @@map("portfolio_images")
+}
+
+// ------------------------------------------------------------------
+// Campaigns
+// ------------------------------------------------------------------
+
+model Campaign {
+  id             String         @id @default(uuid())
+  brandId        String
+  brand          BrandProfile   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  title          String
+  description    String
+  category       String
+  budgetMin      Float?
+  budgetMax      Float?
+  location       String?
+  deadline       DateTime?
+  creatorsNeeded Int            @default(1)
+  status         CampaignStatus @default(DRAFT)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  moodboardImages CampaignMoodboardImage[]
+  deliverables    CampaignDeliverable[]
+  applications    CampaignApplication[]
+  savedBy         SavedCampaign[]
+  collaborations  Collaboration[]
+
+  @@index([category, status])
+  @@index([status, createdAt])
+  @@map("campaigns")
+}
+
+model CampaignMoodboardImage {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  createdAt  DateTime @default(now())
+
+  @@map("campaign_moodboard_images")
+}
+
+model CampaignDeliverable {
+  id          String   @id @default(uuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int      @default(1)
+
+  @@map("campaign_deliverables")
+}
+
+model CampaignApplication {
+  id            String            @id @default(uuid())
+  campaignId    String
+  campaign      Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencerId  String
+  influencer    InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  message       String
+  expectedPrice Float?
+  status        ApplicationStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  collaboration Collaboration?
+
+  @@unique([campaignId, influencerId])
+  @@index([campaignId])
+  @@index([influencerId])
+  @@map("campaign_applications")
+}
+
+// ------------------------------------------------------------------
+// Direct requests + collaboration workspace
+// ------------------------------------------------------------------
+
+model CollaborationRequest {
+  id           String            @id @default(uuid())
+  brandId      String
+  brand        BrandProfile      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  campaignName String
+  message      String
+  budget       Float?
+  deliverables String[]          @default([])
+  status       RequestStatus     @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  collaboration Collaboration?
+
+  @@index([brandId])
+  @@index([influencerId])
+  @@map("collaboration_requests")
+}
+
+model Collaboration {
+  id            String                 @id @default(uuid())
+  brandId       String
+  brand         BrandProfile           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  influencerId  String
+  influencer    InfluencerProfile      @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  campaignId    String?
+  campaign      Campaign?              @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  applicationId String?                @unique
+  application   CampaignApplication?   @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  requestId     String?                @unique
+  request       CollaborationRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  status        CollaborationStatus    @default(ACTIVE)
+  notes         String?
+  deadline      DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  messages Message[]
+  files    CollaborationFile[]
+
+  @@map("collaborations")
+}
+
+model CollaborationFile {
+  id              String        @id @default(uuid())
+  collaborationId String
+  collaboration   Collaboration @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  fileUrl         String
+  name            String
+  uploadedById    String
+  createdAt       DateTime      @default(now())
+
+  @@index([collaborationId])
+  @@map("collaboration_files")
+}
+
+// ------------------------------------------------------------------
+// Messaging
+// ------------------------------------------------------------------
+
+model Message {
+  id              String        @id @default(uuid())
+  collaborationId String
+  collaboration   Collaboration @relation(fields: [collaborationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId      String
+  receiver        User          @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content         String?
+  imageUrl        String?
+  isRead          Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+
+  @@index([collaborationId, createdAt])
+  @@map("messages")
+}
+
+// ------------------------------------------------------------------
+// Notifications, saves, reports
+// ------------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model SavedCreator {
+  id           String            @id @default(uuid())
+  brandId      String
+  brand        BrandProfile      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+
+  @@unique([brandId, influencerId])
+  @@map("saved_creators")
+}
+
+model SavedCampaign {
+  id           String            @id @default(uuid())
+  influencerId String
+  influencer   InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  campaignId   String
+  campaign     Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+
+  @@unique([influencerId, campaignId])
+  @@map("saved_campaigns")
+}
+
+model Report {
+  id             String       @id @default(uuid())
+  reporterId     String
+  reporter       User         @relation("ReporterUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reason         String
+  details        String?
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+
+  @@map("reports")
+}
