@@ -81,7 +81,11 @@ api.interceptors.response.use(
 
 export function extractErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
-    return err.response?.data?.message || err.message || 'Something went wrong';
+    const data = err.response?.data as { message?: string; details?: { field?: string; message: string }[] } | undefined;
+    if (data?.details?.length) {
+      return data.details.map((d) => (d.field ? `${d.field}: ${d.message}` : d.message)).join(' • ');
+    }
+    return data?.message || err.message || 'Something went wrong';
   }
   if (err instanceof Error) return err.message;
   return 'Something went wrong';

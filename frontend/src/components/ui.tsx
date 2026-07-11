@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { ButtonHTMLAttributes, forwardRef, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLoader, FiX, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 
@@ -43,26 +43,36 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function Input({ label, error, className = '', ...rest }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { label, error, className = '', ...rest },
+  ref
+) {
   return (
     <FieldWrap label={label} error={error}>
-      <input className={`input-field ${error ? 'border-brand-pink/50' : ''} ${className}`} {...rest} />
+      <input ref={ref} className={`input-field ${error ? 'border-brand-pink/50' : ''} ${className}`} {...rest} />
     </FieldWrap>
   );
-}
+});
 
 interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
 
-export function TextArea({ label, error, className = '', ...rest }: TextAreaProps) {
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+  { label, error, className = '', ...rest },
+  ref
+) {
   return (
     <FieldWrap label={label} error={error}>
-      <textarea className={`input-field min-h-[110px] resize-y ${error ? 'border-brand-pink/50' : ''} ${className}`} {...rest} />
+      <textarea
+        ref={ref}
+        className={`input-field min-h-[110px] resize-y ${error ? 'border-brand-pink/50' : ''} ${className}`}
+        {...rest}
+      />
     </FieldWrap>
   );
-}
+});
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -70,15 +80,18 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   children: ReactNode;
 }
 
-export function Select({ label, error, className = '', children, ...rest }: SelectProps) {
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { label, error, className = '', children, ...rest },
+  ref
+) {
   return (
     <FieldWrap label={label} error={error}>
-      <select className={`input-field ${error ? 'border-brand-pink/50' : ''} ${className}`} {...rest}>
+      <select ref={ref} className={`input-field ${error ? 'border-brand-pink/50' : ''} ${className}`} {...rest}>
         {children}
       </select>
     </FieldWrap>
   );
-}
+});
 
 // ---------------- Multi-select chips (categories, languages) ----------------
 
