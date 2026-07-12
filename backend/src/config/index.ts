@@ -21,6 +21,8 @@ export const config = {
     .map((o) => o.trim())
     .filter(Boolean),
 
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me',

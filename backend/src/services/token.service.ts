@@ -16,6 +16,16 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
   return jwt.verify(token, config.jwt.accessSecret) as AccessTokenPayload;
 }
 
+export function signGoogleSignupToken(payload: { googleId: string; email: string; name?: string; picture?: string }): string {
+  return jwt.sign(payload, config.jwt.accessSecret, {
+    expiresIn: '15m',
+  } as jwt.SignOptions);
+}
+
+export function verifyGoogleSignupToken(token: string): { googleId: string; email: string; name?: string; picture?: string } {
+  return jwt.verify(token, config.jwt.accessSecret) as { googleId: string; email: string; name?: string; picture?: string };
+}
+
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }

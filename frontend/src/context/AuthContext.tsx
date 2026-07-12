@@ -8,8 +8,11 @@ interface AuthContextValue {
   profile: Profile;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  googleAuth: (idToken: string) => Promise<User | { isNewUser: boolean; signupToken: string; suggested: any }>;
   registerInfluencer: (payload: Record<string, unknown>) => Promise<User>;
   registerBrand: (payload: Record<string, unknown>) => Promise<User>;
+  googleRegisterInfluencer: (payload: Record<string, unknown>) => Promise<User>;
+  googleRegisterBrand: (payload: Record<string, unknown>) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setProfile: (p: Profile) => void;
@@ -90,6 +93,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const googleAuth = useCallback(async (idToken: string) => {
+    try {
+      const res = await authApi.googleAuth(idToken);
+      if (res.data.data.isNewUser) {
+        return res.data.data;
+      }
+      setAccessToken(res.data.data.accessToken);
+      setUser(res.data.data.user);
+      setProfile(res.data.data.profile);
+      return res.data.data.user as User;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  }, []);
+
+  const googleRegisterInfluencer = useCallback(async (payload: Record<string, unknown>) => {
+    try {
+      const res = await authApi.googleRegisterInfluencer(payload);
+      setAccessToken(res.data.data.accessToken);
+      setUser(res.data.data.user);
+      setProfile(res.data.data.profile);
+      return res.data.data.user as User;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  }, []);
+
+  const googleRegisterBrand = useCallback(async (payload: Record<string, unknown>) => {
+    try {
+      const res = await authApi.googleRegisterBrand(payload);
+      setAccessToken(res.data.data.accessToken);
+      setUser(res.data.data.user);
+      setProfile(res.data.data.profile);
+      return res.data.data.user as User;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -101,8 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, loading, login, registerInfluencer, registerBrand, logout, refreshProfile: hydrate, setProfile }),
-    [user, profile, loading, login, registerInfluencer, registerBrand, logout, hydrate]
+    () => ({ user, profile, loading, login, googleAuth, registerInfluencer, registerBrand, googleRegisterInfluencer, googleRegisterBrand, logout, refreshProfile: hydrate, setProfile }),
+    [user, profile, loading, login, googleAuth, registerInfluencer, registerBrand, googleRegisterInfluencer, googleRegisterBrand, logout, hydrate]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

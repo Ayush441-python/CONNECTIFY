@@ -12,8 +12,11 @@ import {
   rotateRefreshToken,
   revokeRefreshToken,
   signAccessToken,
+  signGoogleSignupToken,
+  verifyGoogleSignupToken,
 } from '../services/token.service';
 import { sendEmail, verificationEmailHtml, resetPasswordEmailHtml } from '../services/email.service';
+import { verifyGoogleIdToken } from '../services/google.service';
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -162,6 +165,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   if (!user) throw ApiError.unauthorized('Invalid email or password');
   if (user.isSuspended) throw ApiError.forbidden('This account has been suspended');
+  if (!user.password) throw ApiError.badRequest('This account uses Google Sign-In. Continue with Google instead.');
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw ApiError.unauthorized('Invalid email or password');
@@ -175,6 +179,147 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     profile: user.role === 'INFLUENCER' ? user.influencerProfile : user.role === 'BRAND' ? user.brandProfile : null,
     accessToken,
   }, 'Logged in');
+});
+
+// ---------------- Google Sign-In ----------------
+
+/**
+ * Accepts the Google ID token from the frontend (Google Identity Services).
+ * - Existing Google account            -> logs in.
+ * - Existing local (password) account with the same verified email -> links the
+ *   Google account to it (email is proven-owned by Google) and logs in.
+ * - Brand-new user                     -> returns a short-lived signupToken plus the
+ *   suggested name/email so the frontend can show the "choose role" screen and finish
+ *   registration via /auth/google/register/influencer|brand.
+ */
+export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+  const profile = await verifyGoogleIdToken(idToken);
+
+  let user = await prisma.user.findUnique({
+    where: { googleId: profile.googleId },
+    include: { influencerProfile: true, brandProfile: true },
+  });
+
+  if (!user) {
+    const existingByEmail = await prisma.user.findUnique({
+      where: { email: profile.email },
+      include: { influencerProfile: true, brandProfile: true },
+    });
+
+    if (existingByEmail) {
+      if (existingByEmail.isSuspended) throw ApiError.forbidden('This account has been suspended');
+      user = await prisma.user.update({
+        where: { id: existingByEmail.id },
+        data: {
+          googleId: profile.googleId,
+          isEmailVerified: existingByEmail.isEmailVerified || profile.email_verified,
+          avatarUrl: existingByEmail.avatarUrl || profile.picture,
+        },
+        include: { influencerProfile: true, brandProfile: true },
+      });
+    }
+  }
+
+  if (!user) {
+    const signupToken = signGoogleSignupToken({
+      googleId: profile.googleId,
+      email: profile.email,
+      name: profile.name,
+      picture: profile.picture,
+    });
+    return sendSuccess(res, {
+      isNewUser: true,
+      signupToken,
+      suggested: { name: profile.name, email: profile.email, picture: profile.picture },
+    }, 'Google account verified, choose how you want to join');
+  }
+
+  if (user.isSuspended) throw ApiError.forbidden('This account has been suspended');
+
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  const accessToken = await issueSession(res, user.id, user.role);
+
+  sendSuccess(res, {
+    isNewUser: false,
+    user: publicUser(user),
+    profile: user.role === 'INFLUENCER' ? user.influencerProfile : user.role === 'BRAND' ? user.brandProfile : null,
+    accessToken,
+  }, 'Logged in');
+});
+
+export const googleRegisterInfluencer = asyncHandler(async (req: Request, res: Response) => {
+  const { signupToken, mobile, name, username, instagramUsername, city, state, country, categories, languages, tier, availability } =
+    req.body;
+
+  let googlePayload;
+  try {
+    googlePayload = verifyGoogleSignupToken(signupToken);
+  } catch (err) {
+    throw ApiError.badRequest(err instanceof Error ? err.message : 'Invalid sign-up session');
+  }
+
+  const existing = await prisma.user.findFirst({ where: { OR: [{ email: googlePayload.email }, { googleId: googlePayload.googleId }] } });
+  if (existing) throw ApiError.conflict('An account with this email already exists');
+
+  const existingUsername = await prisma.influencerProfile.findUnique({ where: { username } });
+  if (existingUsername) throw ApiError.conflict('This username is already taken');
+
+  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return tx.user.create({
+      data: {
+        email: googlePayload.email,
+        googleId: googlePayload.googleId,
+        authProvider: 'GOOGLE',
+        avatarUrl: googlePayload.picture,
+        mobile: mobile || undefined,
+        role: 'INFLUENCER',
+        isEmailVerified: true,
+        influencerProfile: {
+          create: { name, username, instagramUsername, city, state, country, categories, languages, tier, availability },
+        },
+      },
+      include: { influencerProfile: true },
+    });
+  });
+
+  const accessToken = await issueSession(res, user.id, user.role);
+  sendSuccess(res, { user: publicUser(user), profile: user.influencerProfile, accessToken }, 'Account created', 201);
+});
+
+export const googleRegisterBrand = asyncHandler(async (req: Request, res: Response) => {
+  const { signupToken, mobile, brandName, industry, about, website, city, state, country, preferredCategories } = req.body;
+
+  let googlePayload;
+  try {
+    googlePayload = verifyGoogleSignupToken(signupToken);
+  } catch (err) {
+    throw ApiError.badRequest(err instanceof Error ? err.message : 'Invalid sign-up session');
+  }
+
+  const existing = await prisma.user.findFirst({ where: { OR: [{ email: googlePayload.email }, { googleId: googlePayload.googleId }] } });
+  if (existing) throw ApiError.conflict('An account with this email already exists');
+
+  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return tx.user.create({
+      data: {
+        email: googlePayload.email,
+        googleId: googlePayload.googleId,
+        authProvider: 'GOOGLE',
+        avatarUrl: googlePayload.picture,
+        mobile: mobile || undefined,
+        role: 'BRAND',
+        isEmailVerified: true,
+        brandProfile: {
+          create: { brandName, industry, about, website, city, state, country, preferredCategories },
+        },
+      },
+      include: { brandProfile: true },
+    });
+  });
+
+  const accessToken = await issueSession(res, user.id, user.role);
+  sendSuccess(res, { user: publicUser(user), profile: user.brandProfile, accessToken }, 'Account created', 201);
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
@@ -276,4 +421,3 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
 
   sendSuccess(res, null, 'Email verified successfully');
 });
-

@@ -10,6 +10,7 @@ import { Loader } from './components/ui';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import GoogleFinishSignup from './pages/auth/GoogleFinishSignup';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import VerifyEmail from './pages/auth/VerifyEmail';
 
@@ -64,6 +65,7 @@ export default function App() {
             <Route element={<GuestOnlyRoute />}>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/auth/google/finish" element={<GoogleFinishSignup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
             </Route>

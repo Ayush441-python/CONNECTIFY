@@ -5,10 +5,11 @@ import toast from 'react-hot-toast';
 import { FiArrowRight } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input } from '../../components/ui';
+import { GoogleButton } from '../../components/GoogleButton';
 import logo from '../../assets/logo.jpeg';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, googleAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: string } };
   const [email, setEmail] = useState('');
@@ -27,6 +28,26 @@ export default function Login() {
       navigate(location.state?.from || fallback, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (idToken: string) => {
+    try {
+      setLoading(true);
+      setError('');
+      const result = await googleAuth(idToken);
+      if ('isNewUser' in result && result.isNewUser) {
+        navigate('/auth/google/finish', { state: result });
+      } else {
+        toast.success('Welcome back!');
+        const user = result as any;
+        const fallback = user.role === 'BRAND' ? '/brand' : user.role === 'INFLUENCER' ? '/influencer' : '/admin';
+        navigate(location.state?.from || fallback, { replace: true });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google Login failed');
     } finally {
       setLoading(false);
     }
@@ -55,6 +76,13 @@ export default function Login() {
             Log in <FiArrowRight />
           </Button>
         </form>
+
+        <div className="mt-6 flex items-center justify-center gap-2">
+           <div className="h-px w-full bg-ink/10"></div>
+           <span className="text-xs text-ink/50 uppercase">or</span>
+           <div className="h-px w-full bg-ink/10"></div>
+        </div>
+        <GoogleButton onSuccess={handleGoogleSuccess} onError={(err) => setError(err.message)} />
 
         <p className="mt-6 text-center text-sm text-ink/50">
           New to Connectify?{' '}

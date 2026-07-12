@@ -11,6 +11,11 @@ datasource db {
 // Enums
 // ------------------------------------------------------------------
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum Role {
   BRAND
   INFLUENCER
@@ -78,21 +83,24 @@ enum ReportStatus {
 // ------------------------------------------------------------------
 
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  mobile            String?   @unique
-  password          String
+  id                String       @id @default(uuid())
+  email             String       @unique
+  mobile            String?      @unique
+  password          String?
   role              Role
-  isEmailVerified   Boolean   @default(false)
-  isActive          Boolean   @default(true)
-  isSuspended       Boolean   @default(false)
+  googleId          String?      @unique
+  authProvider      AuthProvider @default(LOCAL)
+  avatarUrl         String?
+  isEmailVerified   Boolean      @default(false)
+  isActive          Boolean      @default(true)
+  isSuspended       Boolean      @default(false)
   emailVerifyToken  String?
   emailVerifyExpiry DateTime?
   resetToken        String?
   resetTokenExpiry  DateTime?
   lastLoginAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   influencerProfile InfluencerProfile?
   brandProfile      BrandProfile?
@@ -166,15 +174,15 @@ model BrandProfile {
   website             String?
   city                String?
   state               String?
-  country              String?
+  country             String?
   preferredCategories String[] @default([])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  campaigns              Campaign[]
-  collaborationRequests  CollaborationRequest[]
-  collaborations         Collaboration[]
-  savedCreators          SavedCreator[]
+  campaigns             Campaign[]
+  collaborationRequests CollaborationRequest[]
+  collaborations        Collaboration[]
+  savedCreators         SavedCreator[]
 
   @@map("brand_profiles")
 }
@@ -290,22 +298,22 @@ model CollaborationRequest {
 }
 
 model Collaboration {
-  id            String                 @id @default(uuid())
+  id            String                @id @default(uuid())
   brandId       String
-  brand         BrandProfile           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brand         BrandProfile          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   influencerId  String
-  influencer    InfluencerProfile      @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  influencer    InfluencerProfile     @relation(fields: [influencerId], references: [id], onDelete: Cascade)
   campaignId    String?
-  campaign      Campaign?              @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  applicationId String?                @unique
-  application   CampaignApplication?   @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  requestId     String?                @unique
-  request       CollaborationRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
-  status        CollaborationStatus    @default(ACTIVE)
+  campaign      Campaign?             @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  applicationId String?               @unique
+  application   CampaignApplication?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  requestId     String?               @unique
+  request       CollaborationRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  status        CollaborationStatus   @default(ACTIVE)
   notes         String?
   deadline      DateTime?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   messages Message[]
   files    CollaborationFile[]

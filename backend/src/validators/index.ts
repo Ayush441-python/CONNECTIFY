@@ -45,6 +45,42 @@ export const registerBrandSchema = z.object({
   }),
 });
 
+export const googleRegisterInfluencerSchema = z.object({
+  body: z.object({
+    signupToken: z.string().min(1, 'Sign-up token is required'),
+    mobile: z.string().min(6).optional(),
+    name: z.string().min(2),
+    username: z
+      .string()
+      .min(3)
+      .max(30)
+      .regex(/^[a-zA-Z0-9_.]+$/, 'Username may only contain letters, numbers, underscores and dots'),
+    instagramUsername: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    categories: z.array(z.string()).default([]),
+    languages: z.array(z.string()).default([]),
+    tier: z.enum(['NANO', 'MICRO', 'MACRO', 'MEGA']).default('NANO'),
+    availability: z.enum(['AVAILABLE', 'BUSY', 'UNAVAILABLE']).default('AVAILABLE'),
+  }),
+});
+
+export const googleRegisterBrandSchema = z.object({
+  body: z.object({
+    signupToken: z.string().min(1, 'Sign-up token is required'),
+    mobile: z.string().min(6).optional(),
+    brandName: z.string().min(2),
+    industry: z.string().optional(),
+    about: z.string().optional(),
+    website: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    preferredCategories: z.array(z.string()).default([]),
+  }),
+});
+
 export const loginSchema = z.object({
   body: z.object({
     email,
