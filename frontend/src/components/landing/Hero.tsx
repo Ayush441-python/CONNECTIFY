@@ -34,22 +34,7 @@ export function Hero() {
               See how it works
             </a>
           </div>
-          <div className="mt-10 flex items-center gap-6 text-sm text-ink/40">
-            <div>
-              <p className="font-display text-2xl font-semibold text-ink">12K+</p>
-              <p>Creator profiles</p>
-            </div>
-            <div className="h-8 w-px bg-ink/10" />
-            <div>
-              <p className="font-display text-2xl font-semibold text-ink">3.4K+</p>
-              <p>Campaigns run</p>
-            </div>
-            <div className="h-8 w-px bg-ink/10" />
-            <div>
-              <p className="font-display text-2xl font-semibold text-ink">40+</p>
-              <p>Categories</p>
-            </div>
-          </div>
+
         </motion.div>
 
         <div className="relative hidden h-[480px] lg:block">
