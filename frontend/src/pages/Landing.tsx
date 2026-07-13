@@ -1,5 +1,5 @@
 import { Hero } from '../components/landing/Hero';
-import { Features, HowItWorks, Categories, Testimonials, FAQ, CTA } from '../components/landing/Sections';
+import { Features, HowItWorks, Categories, FAQ, CTA } from '../components/landing/Sections';
 
 export default function Landing() {
   return (
@@ -8,7 +8,7 @@ export default function Landing() {
       <Features />
       <HowItWorks />
       <Categories />
-      <Testimonials />
+    
       <FAQ />
       <CTA />
     </>

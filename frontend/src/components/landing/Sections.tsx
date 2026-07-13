@@ -160,53 +160,6 @@ export function Categories() {
   );
 }
 
-// ==================== Testimonials ====================
-
-const testimonials = [
-  {
-    quote: 'We used to manage collabs across five different DMs. Now every campaign has its own workspace and nothing falls through the cracks.',
-    name: 'Priya Nair',
-    role: 'Marketing Lead, Studio Bloom',
-  },
-  {
-    quote: 'Discover actually feels like discovery. I found three creators in my exact niche within a day of posting a campaign.',
-    name: 'Karan Mehta',
-    role: 'Founder, Northgrain Foods',
-  },
-  {
-    quote: "As a nano creator, most platforms ignore you. Connectify's tier filters mean brands looking for my size actually find me.",
-    name: 'Ishita Rao',
-    role: 'Creator · @ishita.frames',
-  },
-];
-
-export function Testimonials() {
-  return (
-    <section className="bg-mist/60 py-24">
-      <div className="mx-auto max-w-7xl px-6">
-        <SectionHeading eyebrow="Trusted by both sides" title="Brands and creators, both heard" />
-        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 0.08}>
-              <div className="glass-card h-full p-6">
-                <p className="font-display text-base italic leading-relaxed text-ink/75">"{t.quote}"</p>
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{t.name}</p>
-                    <p className="text-xs text-ink/45">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ==================== FAQ ====================
 
