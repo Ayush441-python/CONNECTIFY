@@ -19,7 +19,7 @@ import {
   FiFlag,
   FiLogOut,
   FiInstagram,
-  FiTwitter,
+  FiLinkedin,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { notificationApi } from '../api';
@@ -148,12 +148,28 @@ export function Footer() {
               The collaboration marketplace where brands and creators find each other, negotiate, and work — in one workspace.
             </p>
             <div className="mt-4 flex gap-3 text-ink/40">
+  
+              <a href="https://www.instagram.com/__connectify?igsh=dTJ1N2Zzc3loNXo4"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram">
+                   <FiInstagram className="hover:text-brand-pink" />
+              </a>
+              <a href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram">
+                <FiLinkedin className="hover:text-brand-purple" />
+              </a>
+              </div>
+</div>
+            {/* <div className="mt-4 flex gap-3 text-ink/40">
               <FiInstagram className="hover:text-brand-pink" />
-              <FiTwitter className="hover:text-brand-purple" />
+              <FiLinkedin className="hover:text-brand-purple" />
             </div>
-          </div>
-          <FooterCol title="Product" items={['Features', 'How it works', 'Categories', 'Pricing']} />
-          <FooterCol title="Company" items={['About', 'Careers', 'Blog', 'Contact']} />
+          </div> */}
+          
+          <FooterCol title="Company" items={['About', 'Careers', 'Contact']} />
           <FooterCol title="Legal" items={['Privacy', 'Terms', 'Community guidelines']} />
         </div>
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-ink/5 pt-6 text-xs text-ink/40 sm:flex-row">
@@ -253,10 +269,10 @@ function Sidebar({ mobileOpen, setMobileOpen, desktopOpen }: { mobileOpen: boole
 
   const content = (
     <div className="flex h-full flex-col">
-      <Link to="/" className="flex items-center gap-2 px-2 py-1">
+      <div className="flex items-center gap-2 px-2 py-1">
         <img src={logo} alt="Connectify" className="h-8 w-8 rounded-full object-cover" />
         <span className="font-display text-lg font-semibold">Connectify</span>
-      </Link>
+      </div>
 
       <nav className="mt-8 flex-1 space-y-1">
         {nav.map((item) => (
@@ -344,9 +360,6 @@ function Topbar({ onMobileMenuClick, onDesktopMenuClick }: { onMobileMenuClick: 
     <div className="flex items-center justify-between border-b border-ink/5 bg-white/60 px-5 py-3.5 backdrop-blur-xl">
       <div className="flex items-center gap-2">
         <button className="p-2 text-ink lg:hidden" onClick={onMobileMenuClick} aria-label="Open mobile menu">
-          <FiMenu size={20} />
-        </button>
-        <button className="hidden p-2 text-ink lg:block" onClick={onDesktopMenuClick} aria-label="Toggle desktop sidebar">
           <FiMenu size={20} />
         </button>
       </div>

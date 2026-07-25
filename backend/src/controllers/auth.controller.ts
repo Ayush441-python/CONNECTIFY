@@ -243,23 +243,37 @@ export const clerkRegisterInfluencer = asyncHandler(async (req: Request, res: Re
   const existingUsername = await prisma.influencerProfile.findUnique({ where: { username } });
   if (existingUsername) throw ApiError.conflict('This username is already taken');
 
-  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    return tx.user.create({
-      data: {
-        email,
-        clerkId: auth.userId,
-        authProvider: 'GOOGLE',
-        avatarUrl: clerkUser.imageUrl,
-        mobile: mobile || undefined,
-        role: 'INFLUENCER',
-        isEmailVerified: true,
-        influencerProfile: {
-          create: { name, username, instagramUsername, city, state, country, categories, languages, tier, availability },
+  if (mobile) {
+    const existingMobile = await prisma.user.findUnique({ where: { mobile } });
+    if (existingMobile) throw ApiError.conflict('This mobile number is already registered with another account');
+  }
+
+  let user;
+  try {
+    user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      return tx.user.create({
+        data: {
+          email,
+          clerkId: auth.userId,
+          authProvider: 'GOOGLE',
+          avatarUrl: clerkUser.imageUrl,
+          mobile: mobile || undefined,
+          role: 'INFLUENCER',
+          isEmailVerified: true,
+          influencerProfile: {
+            create: { name, username, instagramUsername, city, state, country, categories, languages, tier, availability },
+          },
         },
-      },
-      include: { influencerProfile: true },
+        include: { influencerProfile: true },
+      });
     });
-  });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = (err.meta?.target as string[] | undefined)?.join(', ') || 'field';
+      throw ApiError.conflict(`This ${target} is already in use`);
+    }
+    throw err;
+  }
 
   sendSuccess(res, { user: publicUser(user), profile: user.influencerProfile }, 'Account created', 201);
 });
@@ -277,23 +291,37 @@ export const clerkRegisterBrand = asyncHandler(async (req: Request, res: Respons
   const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { clerkId: auth.userId }] } });
   if (existing) throw ApiError.conflict('An account with this email already exists');
 
-  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    return tx.user.create({
-      data: {
-        email,
-        clerkId: auth.userId,
-        authProvider: 'GOOGLE',
-        avatarUrl: clerkUser.imageUrl,
-        mobile: mobile || undefined,
-        role: 'BRAND',
-        isEmailVerified: true,
-        brandProfile: {
-          create: { brandName, industry, about, website, city, state, country, preferredCategories },
+  if (mobile) {
+    const existingMobile = await prisma.user.findUnique({ where: { mobile } });
+    if (existingMobile) throw ApiError.conflict('This mobile number is already registered with another account');
+  }
+
+  let user;
+  try {
+    user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      return tx.user.create({
+        data: {
+          email,
+          clerkId: auth.userId,
+          authProvider: 'GOOGLE',
+          avatarUrl: clerkUser.imageUrl,
+          mobile: mobile || undefined,
+          role: 'BRAND',
+          isEmailVerified: true,
+          brandProfile: {
+            create: { brandName, industry, about, website, city, state, country, preferredCategories },
+          },
         },
-      },
-      include: { brandProfile: true },
+        include: { brandProfile: true },
+      });
     });
-  });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = (err.meta?.target as string[] | undefined)?.join(', ') || 'field';
+      throw ApiError.conflict(`This ${target} is already in use`);
+    }
+    throw err;
+  }
 
   sendSuccess(res, { user: publicUser(user), profile: user.brandProfile }, 'Account created', 201);
 });
