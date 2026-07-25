@@ -37,6 +37,10 @@ app.get('/', (_req, res) => {
   res.json({ success: true, message: 'Connectify API', docs: '/api/health' });
 });
 
+app.get('/health', (_req, res) => {
+  res.json({ success: true, message: 'Connectify API is running' });
+});
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 
