@@ -24,8 +24,9 @@ export function CreatorCard({ creator, onSave, saved, aspect = 'portrait' }: Cre
   return (
     <motion.div
       whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className="glass-card group overflow-hidden"
+      className="glass-card group overflow-hidden cursor-pointer"
     >
       <Link to={`/creator/${creator.username}`} className="block">
         <div className={`relative w-full overflow-hidden bg-mist ${aspect === 'portrait' ? 'aspect-[4/5]' : 'aspect-square'}`}>
@@ -46,13 +47,20 @@ export function CreatorCard({ creator, onSave, saved, aspect = 'portrait' }: Cre
             <button
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 onSave();
               }}
-              className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-colors ${
-                saved ? 'bg-brand-gradient text-white' : 'bg-white/70 text-ink/60 hover:text-brand-pink'
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSave();
+              }}
+              className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md transition-all active:scale-90 ${
+                saved ? 'bg-brand-gradient text-white' : 'bg-white/70 text-ink/60 hover:text-brand-pink active:text-brand-pink'
               }`}
+              aria-label={saved ? 'Unsave creator' : 'Save creator'}
             >
-              <FiBookmark size={14} className={saved ? 'fill-current' : ''} />
+              <FiBookmark size={16} className={saved ? 'fill-current' : ''} />
             </button>
           )}
 

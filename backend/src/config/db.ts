@@ -5,6 +5,7 @@ declare global {
   // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined;
 }
+console.log(process.env.GOOGLE_CLIENT_ID);
 
 export const prisma =
   global.__prisma ||

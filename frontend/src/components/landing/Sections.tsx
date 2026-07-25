@@ -149,7 +149,7 @@ export function Categories() {
           {CATEGORIES.map((c) => (
             <span
               key={c}
-              className="rounded-full border border-ink/10 bg-white px-5 py-2.5 text-sm font-medium text-ink/70 transition-all hover:-translate-y-0.5 hover:border-transparent hover:bg-brand-gradient hover:text-white hover:shadow-glow"
+              className="rounded-full border border-ink/10 bg-white px-5 py-2.5 text-sm font-medium text-ink/70 transition-all hover:-translate-y-0.5 hover:border-transparent hover:bg-brand-gradient hover:text-white hover:shadow-glow active:scale-95 cursor-pointer"
             >
               {c}
             </span>
@@ -183,7 +183,7 @@ export function FAQ() {
               <div className="glass-card overflow-hidden">
                 <button
                   onClick={() => setOpenIdx(open ? null : i)}
-                  className="flex w-full items-center justify-between px-5 py-4 text-left"
+                  className="flex w-full items-center justify-between px-5 py-4 text-left active:bg-ink/[0.02] min-h-[48px]"
                 >
                   <span className="font-medium text-ink">{f.q}</span>
                   <FiChevronDown className={`shrink-0 text-ink/40 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -212,10 +212,10 @@ export function CTA() {
             Join as a brand looking for the right creators, or a creator ready to be discovered.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link to="/register" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-brand-purple transition-transform hover:scale-[1.02]">
+            <Link to="/register" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-brand-purple transition-transform hover:scale-[1.02] active:scale-[0.97]">
               Join as a Creator <FiArrowRight />
             </Link>
-            <Link to="/register" className="inline-flex items-center gap-2 rounded-full border border-white/40 px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] hover:bg-white/10">
+            <Link to="/register" className="inline-flex items-center gap-2 rounded-full border border-white/40 px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] hover:bg-white/10 active:scale-[0.97] active:bg-white/15">
               Join as a Brand <FiArrowRight />
             </Link>
           </div>

@@ -156,7 +156,7 @@ export default function BrandCampaigns() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`touch-chip ${
                 statusFilter === s ? 'bg-brand-gradient text-white shadow-glow' : 'border border-ink/10 bg-white text-ink/60'
               }`}
             >
@@ -199,11 +199,11 @@ export default function BrandCampaigns() {
                   <FiUsers size={13} /> {c._count?.applications || 0} applications
                 </Link>
                 <div className="flex gap-1">
-                  <button onClick={() => openEditModal(c)} className="rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-ink">
-                    <FiEdit2 size={14} />
+                  <button onClick={() => openEditModal(c)} className="flex h-10 w-10 items-center justify-center rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-ink active:bg-ink/10" aria-label="Edit campaign">
+                    <FiEdit2 size={16} />
                   </button>
-                  <button onClick={() => handleDelete(c.id)} className="rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-brand-pink">
-                    <FiTrash2 size={14} />
+                  <button onClick={() => handleDelete(c.id)} className="flex h-10 w-10 items-center justify-center rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-brand-pink active:bg-ink/10" aria-label="Delete campaign">
+                    <FiTrash2 size={16} />
                   </button>
                 </div>
               </div>

@@ -27,6 +27,7 @@ model User {
   authProvider      AuthProvider       @default(LOCAL)
   avatarUrl         String?
   googleId          String?            @unique
+  clerkId           String?            @unique
   brandProfile      BrandProfile?
   influencerProfile InfluencerProfile?
   receivedMessages  Message[]          @relation("ReceivedMessages")

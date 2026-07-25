@@ -1,4 +1,5 @@
 import express, { Express } from 'express';
+import { clerkMiddleware } from '@clerk/express';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
@@ -24,6 +25,7 @@ app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(clerkMiddleware());
 
 if (config.env !== 'test') {
   app.use(morgan(config.isProd ? 'combined' : 'dev'));

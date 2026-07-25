@@ -103,7 +103,7 @@ export default function Discover() {
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setCategory('')}
-          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+          className={`touch-chip ${
             !category ? 'bg-brand-gradient text-white shadow-glow' : 'border border-ink/10 bg-white text-ink/60'
           }`}
         >
@@ -113,7 +113,7 @@ export default function Discover() {
           <button
             key={c}
             onClick={() => setCategory(c === category ? '' : c)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+            className={`touch-chip ${
               category === c ? 'bg-brand-gradient text-white shadow-glow' : 'border border-ink/10 bg-white text-ink/60'
             }`}
           >

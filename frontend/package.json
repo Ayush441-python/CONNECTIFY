@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/react": "^6.12.8",
     "@react-oauth/google": "^0.13.5",
     "axios": "^1.7.7",
     "framer-motion": "^11.5.6",

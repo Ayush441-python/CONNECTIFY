@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiMenu,
@@ -64,20 +65,20 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          {user ? (
-            <Link to={dashboardPath} className="btn-primary !py-2.5">
+          <Show when="signed-in">
+            <Link to="/brand" className="btn-primary !py-2.5">
               Go to dashboard
             </Link>
-          ) : (
-            <>
-              <Link to="/login" className="btn-ghost">
-                Log in
-              </Link>
-              <Link to="/register" className="btn-primary !py-2.5">
-                Join Connectify
-              </Link>
-            </>
-          )}
+            <UserButton afterSignOutUrl="/" />
+          </Show>
+          <Show when="signed-out">
+            <SignInButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
+              <button className="btn-ghost">Log in</button>
+            </SignInButton>
+            <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
+              <button className="btn-primary !py-2.5">Join Connectify</button>
+            </SignUpButton>
+          </Show>
         </div>
 
         <button className="p-2 text-ink md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
@@ -90,14 +91,12 @@ export function Navbar() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm md:hidden"
             onClick={() => setOpen(false)}
           >
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
               className="ml-auto flex h-full w-72 flex-col gap-6 bg-white p-6"
               onClick={(e) => e.stopPropagation()}
@@ -111,20 +110,19 @@ export function Navbar() {
                 </a>
               ))}
               <div className="mt-4 flex flex-col gap-3">
-                {user ? (
-                  <Link to={dashboardPath} className="btn-primary">
+                <Show when="signed-in">
+                  <Link to="/brand" className="btn-primary w-full text-center">
                     Go to dashboard
                   </Link>
-                ) : (
-                  <>
-                    <Link to="/login" className="btn-secondary">
-                      Log in
-                    </Link>
-                    <Link to="/register" className="btn-primary">
-                      Join Connectify
-                    </Link>
-                  </>
-                )}
+                </Show>
+                <Show when="signed-out">
+                  <SignInButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
+                    <button className="btn-ghost w-full justify-start">Log in</button>
+                  </SignInButton>
+                  <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
+                    <button className="btn-primary w-full">Join Connectify</button>
+                  </SignUpButton>
+                </Show>
               </div>
             </motion.div>
           </motion.div>
@@ -241,6 +239,14 @@ function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobile
   const nav = useNavForRole();
   const { logout, user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Safety net: close the mobile drawer on ANY route change, even if the
+  // element that triggered navigation (logo click, browser back/forward,
+  // programmatic navigate()) didn't call setMobileOpen(false) itself.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const displayName = profile && 'name' in profile ? profile.name : profile && 'brandName' in profile ? profile.brandName : user?.email;
   const photo = profile && 'profilePhotoUrl' in profile ? profile.profilePhotoUrl : profile && 'logoUrl' in profile ? profile.logoUrl : undefined;
@@ -300,14 +306,12 @@ function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobile
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm lg:hidden"
             onClick={() => setMobileOpen(false)}
           >
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.22 }}
               className="h-full w-72 bg-white p-5"
               onClick={(e) => e.stopPropagation()}

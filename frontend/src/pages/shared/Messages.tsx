@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiSend, FiImage, FiMessageCircle, FiSmile } from 'react-icons/fi';
+import { FiSend, FiImage, FiMessageCircle, FiSmile, FiArrowLeft } from 'react-icons/fi';
 import { collaborationApi, uploadApi } from '../../api';
 import { extractErrorMessage } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -126,7 +126,8 @@ export default function Messages() {
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] overflow-hidden rounded-xl2 border border-ink/5 bg-white/60">
-      <div className="w-full max-w-xs shrink-0 overflow-y-auto scrollbar-thin border-r border-ink/5">
+      {/* Conversation list - hidden on mobile when a chat is active */}
+      <div className={`w-full shrink-0 overflow-y-auto scrollbar-thin border-r border-ink/5 sm:max-w-xs sm:block ${activeId ? 'hidden sm:block' : 'block'}`}>
         {collaborations.map((c) => {
           const cp = c.brand.userId === user?.id ? c.influencer : c.brand;
           const cpName = 'name' in cp ? cp.name : (cp as { brandName?: string }).brandName;
@@ -152,10 +153,19 @@ export default function Messages() {
         })}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Chat area - hidden on mobile when no chat is active */}
+      <div className={`min-w-0 flex-1 flex-col ${activeId ? 'flex' : 'hidden sm:flex'}`}>
         {activeCollab ? (
           <>
             <div className="flex items-center gap-3 border-b border-ink/5 p-4">
+              {/* Back button for mobile */}
+              <button
+                onClick={() => setActiveId(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-ink/60 active:bg-ink/5 sm:hidden"
+                aria-label="Back to conversations"
+              >
+                <FiArrowLeft size={20} />
+              </button>
               <div className="relative">
                 <Avatar src={counterpart && ('profilePhotoUrl' in counterpart ? counterpart.profilePhotoUrl : (counterpart as { logoUrl?: string }).logoUrl)} name={counterpartName || '?'} size={38} />
                 {isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />}
@@ -200,10 +210,10 @@ export default function Messages() {
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <button onClick={() => setShowEmoji((s) => !s)} className="rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink">
+                <button onClick={() => setShowEmoji((s) => !s)} className="flex h-10 w-10 items-center justify-center rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink active:bg-ink/10" aria-label="Toggle emoji picker">
                   <FiSmile size={18} />
                 </button>
-                <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink">
+                <button onClick={() => fileInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink active:bg-ink/10" aria-label="Attach image">
                   <FiImage size={18} />
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -214,7 +224,7 @@ export default function Messages() {
                   placeholder="Type a message..."
                   className="input-field flex-1"
                 />
-                <button onClick={() => handleSend()} className="btn-primary !rounded-full !p-3">
+                <button onClick={() => handleSend()} className="btn-primary !rounded-full !p-3" aria-label="Send message">
                   <FiSend size={16} />
                 </button>
               </div>

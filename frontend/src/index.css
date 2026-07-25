@@ -5,6 +5,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-canvas text-ink font-sans antialiased;
@@ -17,6 +18,26 @@
   }
   ::selection {
     @apply bg-brand-pink/20 text-brand-purple-dark;
+  }
+  /* Ensure all interactive elements have pointer cursor & adequate touch targets */
+  button,
+  [role="button"],
+  a,
+  select,
+  label[class*="cursor-pointer"] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  /* Minimum touch target size for icon-only buttons */
+  button:not([class*="w-full"]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  @media (min-width: 1024px) {
+    button:not([class*="w-full"]) {
+      min-height: unset;
+      min-width: unset;
+    }
   }
 }
 
@@ -31,16 +52,23 @@
     @apply bg-brand-gradient bg-clip-text text-transparent;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform duration-200 hover:scale-[1.02] active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink/10 bg-white px-6 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-brand-purple/40 hover:text-brand-purple disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink/10 bg-white px-6 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-brand-purple/40 hover:text-brand-purple active:bg-brand-purple/5 active:border-brand-purple/50 disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink active:bg-ink/10;
   }
   .input-field {
     @apply w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/35 outline-none transition-all focus:border-brand-purple/50 focus:ring-4 focus:ring-brand-purple/10;
+    /* Prevent iOS zoom on focus for font-size < 16px */
+    font-size: 16px;
+  }
+  @media (min-width: 1024px) {
+    .input-field {
+      font-size: 0.875rem; /* text-sm = 14px on desktop */
+    }
   }
   .label-field {
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink/50;
@@ -48,11 +76,46 @@
   .pill {
     @apply inline-flex items-center rounded-full border border-ink/10 bg-mist px-3 py-1 text-xs font-medium text-ink/70;
   }
+  /* Touch-friendly chip/filter buttons */
+  .touch-chip {
+    @apply rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer;
+    @apply active:scale-95;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply rounded-full bg-ink/15;
+  }
+}
+
+/* Mobile-specific: active states mirroring hover for touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  .glass-card {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Category pills on landing page */
+  .hover\:-translate-y-0\.5:active {
+    transform: translateY(-2px);
+  }
+  .hover\:bg-brand-gradient:active {
+    background-image: linear-gradient(115deg, #EC1380 0%, #B421B8 50%, #7C3AED 100%);
+    color: white;
+    border-color: transparent;
+  }
+  /* Icon buttons get larger touch targets on mobile */
+  button[aria-label] {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }

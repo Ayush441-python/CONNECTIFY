@@ -1,36 +1,46 @@
 import { NextFunction, Request, Response } from 'express';
 import { Role } from '@prisma/client';
-import { verifyAccessToken } from '../services/token.service';
 import { ApiError } from '../utils/ApiError';
+import { getAuth } from '@clerk/express';
+import prisma from '../config/db';
 
-export function authenticate(req: Request, _res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
-
-  if (!token) {
-    return next(ApiError.unauthorized('Authentication token missing'));
-  }
-
+export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   try {
-    const payload = verifyAccessToken(token);
-    req.user = { id: payload.userId, role: payload.role };
+    const auth = getAuth(req);
+    
+    if (!auth || !auth.userId) {
+      return next(ApiError.unauthorized('Authentication token missing or invalid'));
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: auth.userId }
+    });
+
+    if (!user) {
+      return next(ApiError.unauthorized('User is authenticated with Clerk but not fully onboarded in our database'));
+    }
+
+    req.user = { id: user.id, role: user.role };
     next();
-  } catch {
+  } catch (error) {
     next(ApiError.unauthorized('Invalid or expired token'));
   }
 }
 
 /** Attaches req.user if a valid token is present, but never rejects the request. */
-export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
-  if (token) {
-    try {
-      const payload = verifyAccessToken(token);
-      req.user = { id: payload.userId, role: payload.role };
-    } catch {
-      // ignore invalid token for optional auth
+export async function optionalAuthenticate(req: Request, _res: Response, next: NextFunction) {
+  try {
+    const auth = getAuth(req);
+    if (auth && auth.userId) {
+      const user = await prisma.user.findUnique({
+        where: { clerkId: auth.userId }
+      });
+      if (user) {
+        req.user = { id: user.id, role: user.role };
+      }
     }
+  } catch {
+    // ignore invalid token for optional auth
   }
   next();
 }

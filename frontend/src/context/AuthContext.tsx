@@ -1,150 +1,92 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { authApi } from '../api';
-import { api, extractErrorMessage, registerUnauthorizedHandler, setAccessToken } from '../lib/api';
+import { useUser, useAuth as useClerkAuth } from '@clerk/react';
+import { api } from '../lib/api';
 import type { Profile, Role, User } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextValue {
   user: User | null;
   profile: Profile;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  googleAuth: (idToken: string) => Promise<User | { isNewUser: boolean; signupToken: string; suggested: any }>;
-  registerInfluencer: (payload: Record<string, unknown>) => Promise<User>;
-  registerBrand: (payload: Record<string, unknown>) => Promise<User>;
-  googleRegisterInfluencer: (payload: Record<string, unknown>) => Promise<User>;
-  googleRegisterBrand: (payload: Record<string, unknown>) => Promise<User>;
-  logout: () => Promise<void>;
+  needsOnboarding: boolean;
   refreshProfile: () => Promise<void>;
   setProfile: (p: Profile) => void;
+  clerkRegisterInfluencer: (payload: Record<string, unknown>) => Promise<void>;
+  clerkRegisterBrand: (payload: Record<string, unknown>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
+  const { getToken } = useClerkAuth();
+  
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile>(null);
   const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   const hydrate = useCallback(async () => {
-    try {
-      const res = await authApi.me();
-      setUser(res.data.data.user);
-      setProfile(res.data.data.profile);
-    } catch {
+    if (!isSignedIn) {
       setUser(null);
       setProfile(null);
-      setAccessToken(null);
+      setNeedsOnboarding(false);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.post('/auth/clerk-sync');
+      if (res.data.data.isNewUser) {
+        setNeedsOnboarding(true);
+        setUser(null);
+        setProfile(null);
+      } else {
+        setUser(res.data.data.user);
+        setProfile(res.data.data.profile);
+        setNeedsOnboarding(false);
+      }
+    } catch (error) {
+      console.error('Failed to sync Clerk user with backend:', error);
+      setUser(null);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSignedIn]);
 
   useEffect(() => {
-    registerUnauthorizedHandler(() => {
-      setUser(null);
-      setProfile(null);
-    });
-    // Attempt silent refresh via httpOnly cookie on first load.
-    (async () => {
-      try {
-        const res = await api.post('/auth/refresh');
-        setAccessToken(res.data.data.accessToken);
-        await hydrate();
-      } catch {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isLoaded) {
+      hydrate();
+    }
+  }, [isLoaded, isSignedIn, clerkUser?.id]); // Refetch when Clerk user changes
 
-  const login = useCallback(async (email: string, password: string) => {
+  const clerkRegisterInfluencer = useCallback(async (payload: Record<string, unknown>) => {
     try {
-      const res = await authApi.login(email, password);
-      setAccessToken(res.data.data.accessToken);
+      const res = await api.post('/auth/clerk/register/influencer', payload);
       setUser(res.data.data.user);
       setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
+      setNeedsOnboarding(false);
+    } catch (error) {
+      throw error; // Let the component handle it
     }
   }, []);
 
-  const registerInfluencer = useCallback(async (payload: Record<string, unknown>) => {
+  const clerkRegisterBrand = useCallback(async (payload: Record<string, unknown>) => {
     try {
-      const res = await authApi.registerInfluencer({ ...payload, role: 'INFLUENCER' });
-      setAccessToken(res.data.data.accessToken);
+      const res = await api.post('/auth/clerk/register/brand', payload);
       setUser(res.data.data.user);
       setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
-    }
-  }, []);
-
-  const registerBrand = useCallback(async (payload: Record<string, unknown>) => {
-    try {
-      const res = await authApi.registerBrand({ ...payload, role: 'BRAND' });
-      setAccessToken(res.data.data.accessToken);
-      setUser(res.data.data.user);
-      setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
-    }
-  }, []);
-
-  const googleAuth = useCallback(async (idToken: string) => {
-    try {
-      const res = await authApi.googleAuth(idToken);
-      if (res.data.data.isNewUser) {
-        return res.data.data;
-      }
-      setAccessToken(res.data.data.accessToken);
-      setUser(res.data.data.user);
-      setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
-    }
-  }, []);
-
-  const googleRegisterInfluencer = useCallback(async (payload: Record<string, unknown>) => {
-    try {
-      const res = await authApi.googleRegisterInfluencer(payload);
-      setAccessToken(res.data.data.accessToken);
-      setUser(res.data.data.user);
-      setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
-    }
-  }, []);
-
-  const googleRegisterBrand = useCallback(async (payload: Record<string, unknown>) => {
-    try {
-      const res = await authApi.googleRegisterBrand(payload);
-      setAccessToken(res.data.data.accessToken);
-      setUser(res.data.data.user);
-      setProfile(res.data.data.profile);
-      return res.data.data.user as User;
-    } catch (err) {
-      throw new Error(extractErrorMessage(err));
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } finally {
-      setAccessToken(null);
-      setUser(null);
-      setProfile(null);
+      setNeedsOnboarding(false);
+    } catch (error) {
+      throw error; // Let the component handle it
     }
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, loading, login, googleAuth, registerInfluencer, registerBrand, googleRegisterInfluencer, googleRegisterBrand, logout, refreshProfile: hydrate, setProfile }),
-    [user, profile, loading, login, googleAuth, registerInfluencer, registerBrand, googleRegisterInfluencer, googleRegisterBrand, logout, hydrate]
+    () => ({ user, profile, loading: !isLoaded || loading, needsOnboarding, refreshProfile: hydrate, setProfile, clerkRegisterInfluencer, clerkRegisterBrand }),
+    [user, profile, isLoaded, loading, needsOnboarding, hydrate, clerkRegisterInfluencer, clerkRegisterBrand]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

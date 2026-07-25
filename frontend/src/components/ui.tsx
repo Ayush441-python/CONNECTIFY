@@ -117,8 +117,8 @@ export function ChipSelect({ label, options, value, onChange }: ChipSelectProps)
               type="button"
               key={opt}
               onClick={() => toggle(opt)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                active ? 'bg-brand-gradient text-white shadow-glow' : 'border border-ink/10 bg-white text-ink/60 hover:border-brand-purple/30'
+              className={`touch-chip ${
+                active ? 'bg-brand-gradient text-white shadow-glow' : 'border border-ink/10 bg-white text-ink/60 hover:border-brand-purple/30 active:border-brand-purple/40'
               }`}
             >
               {opt}
@@ -274,6 +274,12 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
+          onTouchEnd={(e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onClose();
+            }
+          }}
         >
           <motion.div
             className={`glass-card w-full ${maxWidth} max-h-[85vh] overflow-y-auto scrollbar-thin bg-white/95 p-6`}
@@ -285,8 +291,12 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
           >
             <div className="mb-4 flex items-center justify-between">
               {title && <h3 className="font-display text-xl font-semibold">{title}</h3>}
-              <button onClick={onClose} className="ml-auto rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-ink">
-                <FiX />
+              <button
+                onClick={onClose}
+                className="ml-auto flex h-10 w-10 items-center justify-center rounded-full p-1.5 text-ink/40 hover:bg-ink/5 hover:text-ink active:bg-ink/10"
+                aria-label="Close modal"
+              >
+                <FiX size={20} />
               </button>
             </div>
             {children}

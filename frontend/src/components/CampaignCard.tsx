@@ -21,7 +21,7 @@ function daysLeft(deadline?: string | null) {
 export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const dl = daysLeft(campaign.deadline);
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+    <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }} className="cursor-pointer">
       <Link to={`/campaign/${campaign.id}`} className="glass-card block overflow-hidden">
         <div className="relative h-36 w-full overflow-hidden bg-brand-gradient-soft">
           {campaign.moodboardImages?.[0] ? (
