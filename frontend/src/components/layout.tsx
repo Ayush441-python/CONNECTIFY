@@ -235,7 +235,7 @@ function useNavForRole() {
   return influencerNav;
 }
 
-function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (v: boolean) => void }) {
+function Sidebar({ mobileOpen, setMobileOpen, desktopOpen }: { mobileOpen: boolean; setMobileOpen: (v: boolean) => void; desktopOpen: boolean }) {
   const nav = useNavForRole();
   const { logout, user, profile } = useAuth();
   const navigate = useNavigate();
@@ -300,7 +300,9 @@ function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobile
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-ink/5 bg-white/70 p-5 lg:block">{content}</aside>
+      <aside className={`hidden shrink-0 border-r border-ink/5 bg-white/70 p-5 transition-all duration-300 lg:block ${desktopOpen ? 'w-64 opacity-100' : 'w-0 overflow-hidden px-0 opacity-0'}`}>
+        <div className="w-52">{content}</div>
+      </aside>
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -325,7 +327,7 @@ function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobile
   );
 }
 
-function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+function Topbar({ onMobileMenuClick, onDesktopMenuClick }: { onMobileMenuClick: () => void; onDesktopMenuClick: () => void }) {
   const [unread, setUnread] = useState(0);
   const { user } = useAuth();
 
@@ -339,10 +341,15 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const notifPath = user?.role === 'BRAND' ? '/brand/notifications' : user?.role === 'INFLUENCER' ? '/influencer/notifications' : '/admin';
 
   return (
-    <div className="flex items-center justify-between border-b border-ink/5 bg-white/60 px-5 py-3.5 backdrop-blur-xl lg:justify-end">
-      <button className="p-2 text-ink lg:hidden" onClick={onMenuClick} aria-label="Open menu">
-        <FiMenu size={20} />
-      </button>
+    <div className="flex items-center justify-between border-b border-ink/5 bg-white/60 px-5 py-3.5 backdrop-blur-xl">
+      <div className="flex items-center gap-2">
+        <button className="p-2 text-ink lg:hidden" onClick={onMobileMenuClick} aria-label="Open mobile menu">
+          <FiMenu size={20} />
+        </button>
+        <button className="hidden p-2 text-ink lg:block" onClick={onDesktopMenuClick} aria-label="Toggle desktop sidebar">
+          <FiMenu size={20} />
+        </button>
+      </div>
       <Link to={notifPath} className="relative rounded-full p-2 text-ink/60 hover:bg-ink/5 hover:text-ink">
         <FiBell size={19} />
         {unread > 0 && (
@@ -357,11 +364,13 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
 export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
+
   return (
     <div className="flex min-h-screen bg-mist/40">
-      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} desktopOpen={desktopOpen} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar onMobileMenuClick={() => setMobileOpen(true)} onDesktopMenuClick={() => setDesktopOpen(!desktopOpen)} />
         <main className="flex-1 p-5 lg:p-8">
           <Outlet />
         </main>
