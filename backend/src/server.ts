@@ -8,6 +8,11 @@ const server = http.createServer(app);
 
 initSocket(server);
 
+//health
+app.get('/health', (_req, res) => {
+  res.json({ success: true, message: 'Connectify API is running' });
+});
+
 server.listen(config.port, () => {
   // eslint-disable-next-line no-console
   console.log(`Connectify API listening on port ${config.port} [${config.env}]`);
