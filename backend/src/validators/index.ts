@@ -45,8 +45,9 @@ export const registerBrandSchema = z.object({
   }),
 });
 
-export const clerkRegisterInfluencerSchema = z.object({
+export const googleRegisterInfluencerSchema = z.object({
   body: z.object({
+    signupToken: z.string().min(1, 'Sign-up token is required'),
     mobile: z.string().min(6).optional(),
     name: z.string().min(2),
     username: z
@@ -65,8 +66,9 @@ export const clerkRegisterInfluencerSchema = z.object({
   }),
 });
 
-export const clerkRegisterBrandSchema = z.object({
+export const googleRegisterBrandSchema = z.object({
   body: z.object({
+    signupToken: z.string().min(1, 'Sign-up token is required'),
     mobile: z.string().min(6).optional(),
     brandName: z.string().min(2),
     industry: z.string().optional(),

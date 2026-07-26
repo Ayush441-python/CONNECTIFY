@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiMenu,
@@ -65,20 +65,22 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Show when="signed-in">
-            <Link to="/brand" className="btn-primary !py-2.5">
-              Go to dashboard
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </Show>
-          <Show when="signed-out">
-            <SignInButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
-              <button className="btn-ghost">Log in</button>
-            </SignInButton>
-            <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
-              <button className="btn-primary !py-2.5">Join Connectify</button>
-            </SignUpButton>
-          </Show>
+          {user ? (
+            <>
+              <Link to={dashboardPath} className="btn-primary !py-2.5">
+                Go to dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn-ghost">
+                Log in
+              </Link>
+              <Link to="/register" className="btn-primary !py-2.5">
+                Join Connectify
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="p-2 text-ink md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
@@ -110,19 +112,20 @@ export function Navbar() {
                 </a>
               ))}
               <div className="mt-4 flex flex-col gap-3">
-                <Show when="signed-in">
-                  <Link to="/brand" className="btn-primary w-full text-center">
+                {user ? (
+                  <Link to={dashboardPath} className="btn-primary w-full text-center">
                     Go to dashboard
                   </Link>
-                </Show>
-                <Show when="signed-out">
-                  <SignInButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
-                    <button className="btn-ghost w-full justify-start">Log in</button>
-                  </SignInButton>
-                  <SignUpButton mode="modal" fallbackRedirectUrl="/onboarding" forceRedirectUrl="/onboarding">
-                    <button className="btn-primary w-full">Join Connectify</button>
-                  </SignUpButton>
-                </Show>
+                ) : (
+                  <>
+                    <Link to="/login" className="btn-ghost w-full justify-start">
+                      Log in
+                    </Link>
+                    <Link to="/register" className="btn-primary w-full text-center">
+                      Join Connectify
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>

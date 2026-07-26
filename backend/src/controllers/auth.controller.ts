@@ -1,5 +1,4 @@
-import { Request, Response } from 'express';
-import { getAuth, clerkClient } from '@clerk/express';
+﻿import { Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
@@ -182,151 +181,146 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   }, 'Logged in');
 });
 
-// ---------------- Clerk Sign-In / Sync ----------------
+// ---------------- Google Sign-In ----------------
 
-export const clerkSync = asyncHandler(async (req: Request, res: Response) => {
-  const auth = getAuth(req);
-  if (!auth || !auth.userId) throw ApiError.unauthorized('Not authenticated with Clerk');
-
-  const clerkUser = await clerkClient.users.getUser(auth.userId);
-  const email = clerkUser.emailAddresses[0]?.emailAddress;
-  if (!email) throw ApiError.badRequest('Clerk account has no email');
+/**
+ * Accepts the Google ID token from the frontend (Google Identity Services).
+ * - Existing Google account            -> logs in.
+ * - Existing local (password) account with the same verified email -> links the
+ *   Google account to it (email is proven-owned by Google) and logs in.
+ * - Brand-new user                     -> returns a short-lived signupToken plus the
+ *   suggested name/email so the frontend can show the "choose role" screen and finish
+ *   registration via /auth/google/register/influencer|brand.
+ */
+export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+  const profile = await verifyGoogleIdToken(idToken);
 
   let user = await prisma.user.findUnique({
-    where: { clerkId: auth.userId },
+    where: { googleId: profile.googleId },
     include: { influencerProfile: true, brandProfile: true },
   });
 
   if (!user) {
-    // Attempt to link existing account by email
-    const existing = await prisma.user.findUnique({
-      where: { email },
+    const existingByEmail = await prisma.user.findUnique({
+      where: { email: profile.email },
       include: { influencerProfile: true, brandProfile: true },
     });
-    if (existing) {
-      if (existing.isSuspended) throw ApiError.forbidden('This account has been suspended');
+
+    if (existingByEmail) {
+      if (existingByEmail.isSuspended) throw ApiError.forbidden('This account has been suspended');
       user = await prisma.user.update({
-        where: { id: existing.id },
-        data: { clerkId: auth.userId, avatarUrl: clerkUser.imageUrl || existing.avatarUrl },
+        where: { id: existingByEmail.id },
+        data: {
+          googleId: profile.googleId,
+          isEmailVerified: existingByEmail.isEmailVerified || profile.email_verified,
+          avatarUrl: existingByEmail.avatarUrl || profile.picture,
+        },
         include: { influencerProfile: true, brandProfile: true },
       });
     }
   }
 
   if (!user) {
-    return sendSuccess(res, { isNewUser: true, suggested: { email, name: clerkUser.firstName + ' ' + clerkUser.lastName, picture: clerkUser.imageUrl } }, 'Please complete onboarding');
+    const signupToken = signGoogleSignupToken({
+      googleId: profile.googleId,
+      email: profile.email,
+      name: profile.name,
+      picture: profile.picture,
+    });
+    return sendSuccess(res, {
+      isNewUser: true,
+      signupToken,
+      suggested: { name: profile.name, email: profile.email, picture: profile.picture },
+    }, 'Google account verified, choose how you want to join');
   }
 
   if (user.isSuspended) throw ApiError.forbidden('This account has been suspended');
+
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  const accessToken = await issueSession(res, user.id, user.role);
 
   sendSuccess(res, {
     isNewUser: false,
     user: publicUser(user),
     profile: user.role === 'INFLUENCER' ? user.influencerProfile : user.role === 'BRAND' ? user.brandProfile : null,
+    accessToken,
   }, 'Logged in');
 });
 
-export const clerkRegisterInfluencer = asyncHandler(async (req: Request, res: Response) => {
-  const auth = getAuth(req);
-  if (!auth || !auth.userId) throw ApiError.unauthorized('Not authenticated with Clerk');
+export const googleRegisterInfluencer = asyncHandler(async (req: Request, res: Response) => {
+  const { signupToken, mobile, name, username, instagramUsername, city, state, country, categories, languages, tier, availability } =
+    req.body;
 
-  const clerkUser = await clerkClient.users.getUser(auth.userId);
-  const email = clerkUser.emailAddresses[0]?.emailAddress;
-  if (!email) throw ApiError.badRequest('Clerk account has no email');
+  let googlePayload;
+  try {
+    googlePayload = verifyGoogleSignupToken(signupToken);
+  } catch (err) {
+    throw ApiError.badRequest(err instanceof Error ? err.message : 'Invalid sign-up session');
+  }
 
-  const { mobile, name, username, instagramUsername, city, state, country, categories, languages, tier, availability } = req.body;
-
-  const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { clerkId: auth.userId }] } });
+  const existing = await prisma.user.findFirst({ where: { OR: [{ email: googlePayload.email }, { googleId: googlePayload.googleId }] } });
   if (existing) throw ApiError.conflict('An account with this email already exists');
 
   const existingUsername = await prisma.influencerProfile.findUnique({ where: { username } });
   if (existingUsername) throw ApiError.conflict('This username is already taken');
 
-  if (mobile) {
-    const existingMobile = await prisma.user.findUnique({ where: { mobile } });
-    if (existingMobile) throw ApiError.conflict('This mobile number is already registered with another account');
-  }
-
-  let user;
-  try {
-    user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      return tx.user.create({
-        data: {
-          email,
-          clerkId: auth.userId,
-          authProvider: 'GOOGLE',
-          avatarUrl: clerkUser.imageUrl,
-          mobile: mobile || undefined,
-          role: 'INFLUENCER',
-          isEmailVerified: true,
-          influencerProfile: {
-            create: { name, username, instagramUsername, city, state, country, categories, languages, tier, availability },
-          },
+  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return tx.user.create({
+      data: {
+        email: googlePayload.email,
+        googleId: googlePayload.googleId,
+        authProvider: 'GOOGLE',
+        avatarUrl: googlePayload.picture,
+        mobile: mobile || undefined,
+        role: 'INFLUENCER',
+        isEmailVerified: true,
+        influencerProfile: {
+          create: { name, username, instagramUsername, city, state, country, categories, languages, tier, availability },
         },
-        include: { influencerProfile: true },
-      });
+      },
+      include: { influencerProfile: true },
     });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      const target = (err.meta?.target as string[] | undefined)?.join(', ') || 'field';
-      throw ApiError.conflict(`This ${target} is already in use`);
-    }
-    throw err;
-  }
+  });
 
-  sendSuccess(res, { user: publicUser(user), profile: user.influencerProfile }, 'Account created', 201);
+  const accessToken = await issueSession(res, user.id, user.role);
+  sendSuccess(res, { user: publicUser(user), profile: user.influencerProfile, accessToken }, 'Account created', 201);
 });
 
-export const clerkRegisterBrand = asyncHandler(async (req: Request, res: Response) => {
-  const auth = getAuth(req);
-  if (!auth || !auth.userId) throw ApiError.unauthorized('Not authenticated with Clerk');
+export const googleRegisterBrand = asyncHandler(async (req: Request, res: Response) => {
+  const { signupToken, mobile, brandName, industry, about, website, city, state, country, preferredCategories } = req.body;
 
-  const clerkUser = await clerkClient.users.getUser(auth.userId);
-  const email = clerkUser.emailAddresses[0]?.emailAddress;
-  if (!email) throw ApiError.badRequest('Clerk account has no email');
+  let googlePayload;
+  try {
+    googlePayload = verifyGoogleSignupToken(signupToken);
+  } catch (err) {
+    throw ApiError.badRequest(err instanceof Error ? err.message : 'Invalid sign-up session');
+  }
 
-  const { mobile, brandName, industry, about, website, city, state, country, preferredCategories } = req.body;
-
-  const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { clerkId: auth.userId }] } });
+  const existing = await prisma.user.findFirst({ where: { OR: [{ email: googlePayload.email }, { googleId: googlePayload.googleId }] } });
   if (existing) throw ApiError.conflict('An account with this email already exists');
 
-  if (mobile) {
-    const existingMobile = await prisma.user.findUnique({ where: { mobile } });
-    if (existingMobile) throw ApiError.conflict('This mobile number is already registered with another account');
-  }
-
-  let user;
-  try {
-    user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      return tx.user.create({
-        data: {
-          email,
-          clerkId: auth.userId,
-          authProvider: 'GOOGLE',
-          avatarUrl: clerkUser.imageUrl,
-          mobile: mobile || undefined,
-          role: 'BRAND',
-          isEmailVerified: true,
-          brandProfile: {
-            create: { brandName, industry, about, website, city, state, country, preferredCategories },
-          },
+  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return tx.user.create({
+      data: {
+        email: googlePayload.email,
+        googleId: googlePayload.googleId,
+        authProvider: 'GOOGLE',
+        avatarUrl: googlePayload.picture,
+        mobile: mobile || undefined,
+        role: 'BRAND',
+        isEmailVerified: true,
+        brandProfile: {
+          create: { brandName, industry, about, website, city, state, country, preferredCategories },
         },
-        include: { brandProfile: true },
-      });
+      },
+      include: { brandProfile: true },
     });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      const target = (err.meta?.target as string[] | undefined)?.join(', ') || 'field';
-      throw ApiError.conflict(`This ${target} is already in use`);
-    }
-    throw err;
-  }
+  });
 
-  sendSuccess(res, { user: publicUser(user), profile: user.brandProfile }, 'Account created', 201);
+  const accessToken = await issueSession(res, user.id, user.role);
+  sendSuccess(res, { user: publicUser(user), profile: user.brandProfile, accessToken }, 'Account created', 201);
 });
-
-
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies?.[REFRESH_COOKIE];

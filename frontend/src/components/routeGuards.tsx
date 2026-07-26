@@ -4,7 +4,7 @@ import { Loader } from './ui';
 import type { Role } from '../types';
 
 export function ProtectedRoute() {
-  const { user, loading, needsOnboarding } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -15,9 +15,7 @@ export function ProtectedRoute() {
     );
   }
 
-  if (needsOnboarding) {
-    return <Navigate to="/onboarding" replace />;
-  }
+
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
@@ -27,7 +25,7 @@ export function ProtectedRoute() {
 }
 
 export function RoleRoute({ allow }: { allow: Role[] }) {
-  const { user, loading, needsOnboarding } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -37,9 +35,7 @@ export function RoleRoute({ allow }: { allow: Role[] }) {
     );
   }
 
-  if (needsOnboarding) {
-    return <Navigate to="/onboarding" replace />;
-  }
+
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -52,13 +48,11 @@ export function RoleRoute({ allow }: { allow: Role[] }) {
 }
 
 export function GuestOnlyRoute() {
-  const { user, loading, needsOnboarding } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return null;
 
-  if (needsOnboarding && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
-  }
+
 
   if (user) {
     const fallback = user.role === 'BRAND' ? '/brand' : user.role === 'INFLUENCER' ? '/influencer' : '/admin';

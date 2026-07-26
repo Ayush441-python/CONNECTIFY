@@ -29,10 +29,9 @@ authRouter.get('/me', authenticate, auth.getMe);
 authRouter.post('/forgot-password', authLimiter, validate(v.forgotPasswordSchema), auth.forgotPassword);
 authRouter.post('/reset-password', authLimiter, validate(v.resetPasswordSchema), auth.resetPassword);
 authRouter.get('/verify-email/:token', auth.verifyEmail);
-// Clerk sync
-authRouter.post('/clerk-sync', authLimiter, auth.clerkSync);
-authRouter.post('/clerk/register/influencer', authLimiter, validate(v.clerkRegisterInfluencerSchema), auth.clerkRegisterInfluencer);
-authRouter.post('/clerk/register/brand', authLimiter, validate(v.clerkRegisterBrandSchema), auth.clerkRegisterBrand);
+authRouter.post('/google', authLimiter, auth.googleAuth);
+authRouter.post('/google/register/influencer', authLimiter, validate(v.googleRegisterInfluencerSchema), auth.googleRegisterInfluencer);
+authRouter.post('/google/register/brand', authLimiter, validate(v.googleRegisterBrandSchema), auth.googleRegisterBrand);
 router.use('/auth', authRouter);
 
 // ==================== PROFILE ====================

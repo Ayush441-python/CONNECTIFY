@@ -10,9 +10,9 @@ import { Loader } from './components/ui';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import Onboarding from './pages/auth/Onboarding';
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import VerifyEmail from './pages/auth/VerifyEmail';
+import GoogleFinishSignup from './pages/auth/GoogleFinishSignup';
 
 const InfluencerDashboard = lazy(() => import('./pages/influencer/Dashboard'));
 const InfluencerPortfolio = lazy(() => import('./pages/influencer/Portfolio'));
@@ -65,7 +65,7 @@ export default function App() {
             <Route element={<GuestOnlyRoute />}>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/auth/google/finish" element={<GoogleFinishSignup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
             </Route>
