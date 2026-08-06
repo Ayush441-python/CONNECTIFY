@@ -187,7 +187,7 @@ export default function Register() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Email" type="email" placeholder="you@example.com" error={influencerFormHook.formState.errors.email?.message} {...influencerFormHook.register('email', { required: 'Required' })} />
-                  <Input label="Mobile (optional)" placeholder="9876543210" maxLength={10} error={influencerFormHook.formState.errors.mobile?.message} {...influencerFormHook.register('mobile', { pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' } })} />
+                  <Input label="Mobile" placeholder="1234567890" maxLength={10} error={influencerFormHook.formState.errors.mobile?.message} {...influencerFormHook.register('mobile', { pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' } })} />
                 </div>
                 <Input label="Password" type="password" placeholder="At least 8 characters" error={influencerFormHook.formState.errors.password?.message} {...influencerFormHook.register('password', { required: 'Required', minLength: { value: 8, message: 'At least 8 characters' } })} />
                 <Input label="Instagram username (optional)" placeholder="@meera.styles" {...influencerFormHook.register('instagramUsername')} />
