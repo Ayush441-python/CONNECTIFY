@@ -226,7 +226,7 @@ export default function Register() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Email" type="email" placeholder="team@brand.com" error={brandFormHook.formState.errors.email?.message} {...brandFormHook.register('email', { required: 'Required' })} />
-                  <Input label="Mobile (optional)" placeholder="9876543210" maxLength={10} error={brandFormHook.formState.errors.mobile?.message} {...brandFormHook.register('mobile', { pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' } })} />
+                  <Input label="Mobile" placeholder="9876543210" maxLength={10} error={brandFormHook.formState.errors.mobile?.message} {...brandFormHook.register('mobile', { pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' } })} />
                 </div>
                 <Input label="Password" type="password" placeholder="At least 8 characters" error={brandFormHook.formState.errors.password?.message} {...brandFormHook.register('password', { required: 'Required', minLength: { value: 8, message: 'At least 8 characters' } })} />
                 <Input label="Website (optional)" placeholder="https://yourbrand.com" {...brandFormHook.register('website')} />
